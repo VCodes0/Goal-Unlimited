@@ -1,12 +1,11 @@
-import 'dart:developer';
-import 'package:action_slider/action_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:goals_unlimited/views/auth/otp.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-
+import 'package:swipeable_button_view/swipeable_button_view.dart';
 import '../../main.dart';
+import 'otp.dart';
 
 class Signup extends StatefulWidget {
   const Signup({super.key});
@@ -19,6 +18,7 @@ class _SignupState extends State<Signup> {
   final _formKey = GlobalKey<FormState>();
   String completePhoneNumber = '';
   bool isLogin = false;
+  bool isFinished = false;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class _SignupState extends State<Signup> {
               Text(
                 isLogin ? "Welcome Back" : "Welcome",
                 style: GoogleFonts.poppins(
-                  color: Colors.yellow,
+                  color: CupertinoColors.systemYellow,
                   fontSize: mq.width * 0.09,
                   fontWeight: FontWeight.bold,
                 ),
@@ -60,12 +60,14 @@ class _SignupState extends State<Signup> {
                       borderSide: const BorderSide(),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.yellow),
+                      borderSide: const BorderSide(
+                        color: CupertinoColors.systemYellow,
+                      ),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(
-                        color: Colors.yellow,
+                        color: CupertinoColors.systemYellow,
                         width: 2,
                       ),
                       borderRadius: BorderRadius.circular(10),
@@ -74,56 +76,55 @@ class _SignupState extends State<Signup> {
                     fillColor: Colors.white12,
                   ),
                   style: const TextStyle(color: Colors.white),
-                  initialCountryCode: 'US',
+                  initialCountryCode: 'IN',
                   onChanged: (phone) {
-                    setState(() {
-                      completePhoneNumber = phone.completeNumber;
-                    });
+                    completePhoneNumber = phone.completeNumber;
+                  },
+                  validator: (phone) {
+                    if (phone == null || phone.number.isEmpty) {
+                      return 'Phone number is required';
+                    }
+                    return null;
                   },
                 ),
               ),
               SizedBox(height: mq.height * 0.04),
-              SizedBox(
-                width: double.infinity,
-                child: ActionSlider.standard(
-                  backgroundColor: Colors.yellow,
-                  toggleColor: Colors.black,
-                  icon: const Icon(Icons.arrow_forward, color: Colors.yellow),
-                  loadingIcon: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+
+              Center(
+                child: SwipeableButtonView(
+                  buttonText: isLogin ? "LOG IN" : "SIGN UP",
+                  buttonWidget: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.grey,
                   ),
-                  successIcon: const Icon(Icons.check, color: Colors.yellow),
-                  failureIcon: const Icon(Icons.close, color: Colors.red),
-                  action: (controller) async {
+                  activeColor: CupertinoColors.systemYellow,
+                  buttontextstyle: TextStyle(
+                    color: CupertinoColors.black,
+                    fontSize: 16,
+                  ),
+                  isFinished: isFinished,
+                  onWaitingProcess: () async {
                     if (_formKey.currentState!.validate()) {
-                      controller.loading();
-
                       await Future.delayed(const Duration(seconds: 1));
-
-                      controller.success();
-
-                      await Future.delayed(const Duration(milliseconds: 500));
-
-                      // Navigate to OTP screen using GetX
-                      Get.to(() => OtpScreen(phoneNumber: completePhoneNumber));
-
-                      controller.reset();
+                      setState(() {
+                        isFinished = true;
+                      });
                     } else {
-                      controller.failure();
-                      await Future.delayed(const Duration(seconds: 1));
-                      controller.reset();
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      setState(() {
+                        isFinished = false;
+                      });
                     }
                   },
-                  child: Text(
-                    isLogin ? "Slide To Login" : "Slide To Sign Up",
-                    style: GoogleFonts.poppins(
-                      color: Colors.black,
-                      fontSize: mq.width * 0.045,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onFinish: () async {
+                    Get.to(() => OtpScreen(phoneNumber: completePhoneNumber));
+                    setState(() {
+                      isFinished = false;
+                    });
+                  },
                 ),
               ),
+
               SizedBox(height: mq.height * 0.03),
               Center(
                 child: TextButton(
